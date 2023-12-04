@@ -17,7 +17,7 @@ def multi_func_stru_dist(cfs_map_a, cfs_map_b):
     for func_name in func_name_set:
         stru_list_a = []
         if func_name in cfs_map_a.keys():
-            _, stru_list_a,_ = cfs_map_a[func_name]
+            _, stru_list_a, _ = cfs_map_a[func_name]
 
         stru_list_b = []
         if func_name in cfs_map_b.keys():
@@ -68,7 +68,7 @@ def acc_str_node(node):
     elif hasattr(node, "n"):
         return str(node.n)
     elif hasattr(node, "s"):
-        return "\'" + node.s + "\'"
+        return "'" + node.s + "'"
     else:
         if node.__class__.__name__ in ["Module", "Load", "Store"]:
             return ""
@@ -118,7 +118,6 @@ def zss_ast_size(code):
     for func_name, func_code in func_map.items():
         s += zss_func_ast_size(func_code)
     return s
-
 
 
 def label_weight(l1, l2):
@@ -173,7 +172,12 @@ def zss_code_ast_edit(code_a, code_b):
     root_zss_node_b = Node("root")
     zss_ast_visit(root_node_b, root_zss_node_b)
 
-    cost, ops = simple_distance(root_zss_node_a, root_zss_node_b, label_dist=label_weight, return_operations=True)
+    cost, ops = simple_distance(
+        root_zss_node_a,
+        root_zss_node_b,
+        label_dist=label_weight,
+        return_operations=True,
+    )
     return cost, ops
 
 
@@ -182,23 +186,19 @@ def lev_tl_dist(token_list_a, token_list_b):
     size_y = len(token_list_b) + 1
     matrix = numpy.zeros((size_x, size_y))
     for x in range(size_x):
-        matrix [x, 0] = x
+        matrix[x, 0] = x
     for y in range(size_y):
-        matrix [0, y] = y
+        matrix[0, y] = y
 
     for x in range(1, size_x):
         for y in range(1, size_y):
-            if token_list_a[x-1].string == token_list_b[y-1].string:
-                matrix[x,y] = min(
-                    matrix[x-1, y] + 1,
-                    matrix[x-1, y-1],
-                    matrix[x, y-1] + 1
+            if token_list_a[x - 1].string == token_list_b[y - 1].string:
+                matrix[x, y] = min(
+                    matrix[x - 1, y] + 1, matrix[x - 1, y - 1], matrix[x, y - 1] + 1
                 )
             else:
-                matrix[x,y] = min(
-                    matrix[x-1,y] + 1,
-                    matrix[x-1,y-1] + 1,
-                    matrix[x,y-1] + 1
+                matrix[x, y] = min(
+                    matrix[x - 1, y] + 1, matrix[x - 1, y - 1] + 1, matrix[x, y - 1] + 1
                 )
     return matrix[size_x - 1, size_y - 1]
 
@@ -216,15 +216,11 @@ def smt_lev_tl_dist(token_list_a, token_list_b, limit):
         for y in range(1, size_y):
             if token_list_a[x - 1].string == token_list_b[y - 1].string:
                 matrix[x, y] = min(
-                    matrix[x - 1, y] + 1,
-                    matrix[x - 1, y - 1],
-                    matrix[x, y - 1] + 1
+                    matrix[x - 1, y] + 1, matrix[x - 1, y - 1], matrix[x, y - 1] + 1
                 )
             else:
                 matrix[x, y] = min(
-                    matrix[x - 1, y] + 1,
-                    matrix[x - 1, y - 1] + 1,
-                    matrix[x, y - 1] + 1
+                    matrix[x - 1, y] + 1, matrix[x - 1, y - 1] + 1, matrix[x, y - 1] + 1
                 )
         if all(matrix[x, y] > limit for y in range(size_y)):
             return limit + 1
@@ -273,6 +269,7 @@ def apted_ast_visit(ast_node):
 
 def gen_apted_tree(code):
     from apted.helpers import Tree
+
     tree_str = apted_ast_visit(ast.parse(code))
     return Tree.from_text(tree_str)
 

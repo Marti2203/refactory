@@ -14,9 +14,11 @@ from itertools import combinations, permutations
 from basic_framework.distance import lev_code_distance
 from basic_framework.statement import *
 
+
 class DepthTrace:
     """Restrain the times that a program invokes a hole method"""
-    MAX_DEPTH = 10000000#100
+
+    MAX_DEPTH = 10000000  # 100
 
     def __init__(self):
         self.set_max_depth()
@@ -38,8 +40,7 @@ class DepthTrace:
 
     def update_times(self):
         """Raise an exception when no further hole method invocation is allowed or stack overflow may happen"""
-        if self.t_count <= 0 or \
-                self.get_stack_size() >= self.STACK_MAX_DEPTH/2:
+        if self.t_count <= 0 or self.get_stack_size() >= self.STACK_MAX_DEPTH / 2:
             raise DepthTrace.MaxDepthException()
         self.t_count -= 1
 
@@ -80,9 +81,11 @@ class SearchSpace:
         u_set = u_set.union(b_set)
 
         for ln in u_set:
-            if ln not in a_set or \
-                ln not in b_set or \
-                set(self.ss_dict[ln]) != set(ss_b.ss_dict[ln]):
+            if (
+                ln not in a_set
+                or ln not in b_set
+                or set(self.ss_dict[ln]) != set(ss_b.ss_dict[ln])
+            ):
                 return False
         return True
 
@@ -124,7 +127,6 @@ class SearchSpace:
 
 
 class ExprGenerator:
-
     def __init__(self):
         self.expr_list_dict = {}
         self.type_dict_dict = {}
@@ -161,7 +163,9 @@ class ExprGenerator:
                 for vari_tuple_perm in vari_tuple_perm_list:
                     tmp_expr = template_str
                     for i in range(len(vari_tuple_perm)):
-                        tmp_expr = tmp_expr.replace("{" + str(i) + "}", "var_dict['" + vari_tuple_perm[i] + "']")
+                        tmp_expr = tmp_expr.replace(
+                            "{" + str(i) + "}", "var_dict['" + vari_tuple_perm[i] + "']"
+                        )
 
                     if "**" in tmp_expr:
                         pass
@@ -174,7 +178,6 @@ class ExprGenerator:
                             expr_list.append(tmp_expr)
                         except Exception as e:
                             pass
-
 
         return expr_list, type_dict
 
@@ -189,7 +192,6 @@ class ExprGenerator:
 
         return filter_expr_list, filter_type_dict
 
-
     def gen_assign_ss(self, pre_assign_str, var_dict, k_best, is_simple=False):
         # Generate expressions for the assignment statement
         expr_list = []
@@ -198,7 +200,9 @@ class ExprGenerator:
         # Get the type of the statement in pre_assign_str
         pre_assign_type_str = ""
         try:
-            pre_assign_type_str = str(type(fast_eval(pre_assign_str, var_dict)))#copy.deepcopy(
+            pre_assign_type_str = str(
+                type(fast_eval(pre_assign_str, var_dict))
+            )  # copy.deepcopy(
         except Exception:
             pre_assign_type_str = ""
 
@@ -216,7 +220,7 @@ class ExprGenerator:
         # If we find a method invocation, we do not change the assignment statement.
         if t_start > -1 and t_end > -1:
             method_signature = pre_assign_str[t_start:t_end]
-            if method_signature in dir(var_dict['self']):
+            if method_signature in dir(var_dict["self"]):
                 return expr_list, [1]
 
         expr_list_gen = []
@@ -229,17 +233,24 @@ class ExprGenerator:
 
         # Misuse based expression
         from basic_framework.holes import Holes
+
         for constant in Holes.constant_list:
             for i in range(len(token_list)):
                 token = token_list[i]
                 if tok_name[token.exact_type] in ["NUMBER", "STRING"]:
-                    tmp_cond = pre_assign_str[:token.start[1]] + constant + pre_assign_str[token.end[1]:]
+                    tmp_cond = (
+                        pre_assign_str[: token.start[1]]
+                        + constant
+                        + pre_assign_str[token.end[1] :]
+                    )
                     expr_list.append(tmp_cond)
 
         expr_list = list(set(expr_list))
 
         # Sort and filter
-        r_expr_list, r_score_list = self.sort(expr_list, pre_assign_str, var_dict, k_best)
+        r_expr_list, r_score_list = self.sort(
+            expr_list, pre_assign_str, var_dict, k_best
+        )
         return r_expr_list, r_score_list
 
     def gen_misuse_conds(self, pre_cond_str, op_list):
@@ -252,8 +263,10 @@ class ExprGenerator:
                 t_end = token.end[1]
                 if token.string == "is":
                     next_token = token_list[i + 1]
-                    if next_token.string == "not" and \
-                            tok_name[next_token.exact_type] == "NAME":
+                    if (
+                        next_token.string == "not"
+                        and tok_name[next_token.exact_type] == "NAME"
+                    ):
                         t_end = next_token.end[1]
                         i += 1
                 for op in op_list:
@@ -261,11 +274,16 @@ class ExprGenerator:
                     cond_set.add(cond)
 
         from basic_framework.holes import Holes
+
         for constant in Holes.constant_list:
             for i in range(len(token_list)):
                 token = token_list[i]
                 if tok_name[token.exact_type] in ["NUMBER", "STRING"]:
-                    tmp_cond = pre_cond_str[:token.start[1]] + constant + pre_cond_str[token.end[1]:]
+                    tmp_cond = (
+                        pre_cond_str[: token.start[1]]
+                        + constant
+                        + pre_cond_str[token.end[1] :]
+                    )
                     cond_set.add(tmp_cond)
         return list(cond_set)
 
@@ -288,7 +306,6 @@ class ExprGenerator:
         misuse_cond_list = self.gen_misuse_conds(pre_cond_str, op_list)
         cond_list.extend(misuse_cond_list)
 
-
         # Remove repeated condations
         cond_list = list(set(cond_list))
 
@@ -297,12 +314,12 @@ class ExprGenerator:
         return r_cond_list, r_score_list
 
     def trans(self, var_str):
-        return "var_dict[\'" + var_str + "\']"
+        return "var_dict['" + var_str + "']"
 
     def unwrap_expr(self, expr_str, var_dict):
         rev_var_dict = {}
         for k in var_dict.keys():
-            rev_var_dict["var_dict[\'" + k + "\']"] = k
+            rev_var_dict["var_dict['" + k + "']"] = k
 
         for wrap_var_str, ori_var_str in rev_var_dict.items():
             if wrap_var_str in expr_str:
@@ -310,7 +327,7 @@ class ExprGenerator:
         return expr_str
 
     def score(self, expr_str, ori_expr):
-        s0 = 1 /(lev_code_distance(expr_str, ori_expr)+1)
+        s0 = 1 / (lev_code_distance(expr_str, ori_expr) + 1)
         return s0
 
     def sort(self, expr_list, ori_expr, var_dict, k_best):
@@ -342,7 +359,6 @@ class ExprRecord:
 
 
 class TERelation:
-
     def __init__(self):
         self.relation_dict = {}
         self.score_dict = {}
@@ -355,8 +371,8 @@ class TERelation:
 
     def add_expr_list_ws_p(self, expr_list, score_list, var_dict):
         if len(expr_list) == 1:
-            self.relation_dict = {expr_list[0]:[expr_list[0]]}
-            self.score_dict = {expr_list[0]:[score_list[0]]}
+            self.relation_dict = {expr_list[0]: [expr_list[0]]}
+            self.score_dict = {expr_list[0]: [score_list[0]]}
         else:
             self.add_expr_list_ws(expr_list, score_list, var_dict)
 
@@ -423,6 +439,7 @@ class TERelation:
             expr_rec_list.append(er)
         return expr_rec_list
 
+
 class ExprGroupList:
     def __init__(self):
         self.expr_group_list = []
@@ -473,6 +490,7 @@ class ExprGroupList:
         else:
             return False
 
+
 class ExprGroup:
     def __init__(self):
         self.expr_dict = {}
@@ -489,7 +507,7 @@ class ExprGroup:
     def add_expr_rec(self, times, ln, expr_rec):
         if times not in self.expr_dict.keys():
             self.expr_dict[times] = [[], 0, ln]
-        assert(self.expr_dict[times][2] == ln)
+        assert self.expr_dict[times][2] == ln
         self.expr_dict[times][0].append(expr_rec)
 
     def add_expr_rec_list(self, times, ln, expr_rec_list):
@@ -513,7 +531,7 @@ class ExprGroup:
             res_dict[ln][times] = self.get_expr_rec(times, ln)
         return res_dict
 
-    def prune(self, times, ln, k_best = 1000):
+    def prune(self, times, ln, k_best=1000):
         self.expr_dict[times][ln][0] = self.expr_dict[times][0][:k_best]
         self.expr_dict[times][ln][1] = 0
 
@@ -543,6 +561,7 @@ class ExprGroup:
                 else:
                     self.expr_dict[times_list[j + 1]][1] += 1
                     import basic_framework.holes as bfh
+
                     if times_list[j] in bfh.Holes.curr_eg.expr_dict.keys():
                         del bfh.Holes.curr_eg.expr_dict[times_list[j]]
         return True

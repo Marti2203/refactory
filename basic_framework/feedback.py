@@ -31,7 +31,7 @@ def gen_feedback(ss_list):
 
 
 def gen_rep_code(ss_list, holed_func_code):
-    assert(len(ss_list) > 0)
+    assert len(ss_list) > 0
     fb_list, fb_score_list = gen_feedback(ss_list)
 
     if len(fb_score_list) == 0:
@@ -42,16 +42,18 @@ def gen_rep_code(ss_list, holed_func_code):
 
     rep_code = ""
     for line in holed_func_code.split("\n"):
-        if "Holes.iil_hole(" in line or \
-                "Holes.empty_hole(" in line or \
-                "from basic_framework.holes import *" in line:
+        if (
+            "Holes.iil_hole(" in line
+            or "Holes.empty_hole(" in line
+            or "from basic_framework.holes import *" in line
+        ):
             continue
         else:
             hole_sig_str = "Holes.condition_hole("
             ind = line.find(hole_sig_str)
             if ind != -1:
                 front_str = line[:ind]
-                ln = float(line[ind + len(hole_sig_str):].split(",")[0])
+                ln = float(line[ind + len(hole_sig_str) :].split(",")[0])
                 rep_code += front_str + fb[ln] + ":\n"
                 continue
 
@@ -59,7 +61,7 @@ def gen_rep_code(ss_list, holed_func_code):
             ind = line.find(hole_sig_str)
             if ind != -1:
                 front_str = line[:ind]
-                ln = float(line[ind + len(hole_sig_str):].split(",")[0])
+                ln = float(line[ind + len(hole_sig_str) :].split(",")[0])
                 rep_code += front_str + fb[ln] + "\n"
                 continue
 
@@ -67,7 +69,7 @@ def gen_rep_code(ss_list, holed_func_code):
             ind = line.find(hole_sig_str)
             if ind != -1:
                 front_str = line[:ind]
-                ln = float(line[ind + len(hole_sig_str):].split(",")[0])
+                ln = float(line[ind + len(hole_sig_str) :].split(",")[0])
                 rep_code += front_str + fb[ln] + "\n"
                 continue
 
@@ -75,7 +77,7 @@ def gen_rep_code(ss_list, holed_func_code):
             ind = line.find(hole_sig_str)
             if ind != -1:
                 front_str = line[:ind]
-                ln = float(line[ind + len(hole_sig_str):].split(",")[0])
+                ln = float(line[ind + len(hole_sig_str) :].split(",")[0])
                 rep_code += front_str + fb[ln] + "\n"
                 continue
 
@@ -85,14 +87,18 @@ def gen_rep_code(ss_list, holed_func_code):
     line_list = rep_code.split("\n")[:-1]
     for line in line_list:
         while True:
-            frt_str = "var_dict[\""
-            end_str = "\"]"
+            frt_str = 'var_dict["'
+            end_str = '"]'
             l = line.find(frt_str)
             if l == -1:
                 break
             else:
-                r = l + len(frt_str) + line[l + len(frt_str):].find(end_str)
-                line = line[:l] + line[l + len(frt_str):r].strip() + line[r + len(end_str):]
+                r = l + len(frt_str) + line[l + len(frt_str) :].find(end_str)
+                line = (
+                    line[:l]
+                    + line[l + len(frt_str) : r].strip()
+                    + line[r + len(end_str) :]
+                )
         final_rep_code += line + "\n"
     final_rep_code = regularize(final_rep_code)
     return final_rep_code

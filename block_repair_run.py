@@ -5,8 +5,9 @@ import os
 import csv
 from basic_framework.cfs import get_cfs_map, cfs_map_equal
 from basic_framework.repair import BlockRepair, ORO
+import tempfile
 
-
+# fmt: off
 csv_header = ["Question", "Sampling Rate", "Experiment ID", "File Name",
             "Status", "Match (Rfty Code)", "Match (Ori Code)",
             "Buggy Code", "Buggy Mutation",
@@ -25,9 +26,10 @@ key_list = ["status", "match", "match_ori",
             "spec_syn_time", "total_time",
             "cnt_case_pass", "cnt_case_all",
             "rps"]
+# fmt: on
 
 
-def gen_row(ques_name, sr, exp_idx, file_name, code_perf_map):
+def gen_row(ques_name, sr, exp_idx, file_name, code_perf_map, data_dir_path, output_dir="/output/"):
     global key_list
 
     row = [ques_name, sr, exp_idx, file_name]
@@ -40,16 +42,29 @@ def gen_row(ques_name, sr, exp_idx, file_name, code_perf_map):
             row.append("%.3f" % ele)
         else:
             row.append(ele)
+
+    try:
+        repaired_code = code_perf_map["rep_code"]
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+            f.write(repaired_code)
+            f.flush()
+            #print(f"diff {f.name} {os.path.join(data_dir_path,ques_name,file_name)}")
+            os.system(
+                f"git diff {os.path.join(data_dir_path,ques_name,file_name)} {f.name} > {os.path.join(output_dir,file_name+'_1.diff')}"
+            )
+    except Exception as e:
+        print(e)
+
     return row
 
 
-def perf_to_csv(ques_dir_path, perf_map_dict, online_or_offline):
+def perf_to_csv(ques_dir_path, perf_map_dict, online_or_offline, data_dir_path ,output_dir="/output"):
     global csv_header
 
     ques_name = ques_dir_path.split("/")[-1]
     csv_path = ques_dir_path + "/refactory_" + online_or_offline + ".csv"
 
-    with open(csv_path, 'w') as f:
+    with open(csv_path, "w") as f:
         csv_w = csv.writer(f)
         csv_w.writerow(csv_header)
 
@@ -58,26 +73,53 @@ def perf_to_csv(ques_dir_path, perf_map_dict, online_or_offline):
                 for file_name in perf_map_dict[sr][exp_idx].keys():
                     code_perf_map = perf_map_dict[sr][exp_idx][file_name]
                     if "tr" in code_perf_map.keys():
-                        code_perf_map["cnt_case_pass"] = list(code_perf_map["tr"].values()).count(True)
-                        code_perf_map["cnt_case_all"] = len(list(code_perf_map["tr"].values()))
+                        code_perf_map["cnt_case_pass"] = list(
+                            code_perf_map["tr"].values()
+                        ).count(True)
+                        code_perf_map["cnt_case_all"] = len(
+                            list(code_perf_map["tr"].values())
+                        )
 
-                    row = gen_row(ques_name, sr, exp_idx, file_name, code_perf_map)
+                    row = gen_row(
+                        ques_name, sr, exp_idx, file_name, code_perf_map, data_dir_path, output_dir
+                    )
                     csv_w.writerow(row)
 
 
-def repair_ques(ques_dir_path, is_offline_ref, is_online_ref, is_mutation, sr_list, exp_time):
-    br = BlockRepair(ques_dir_path, is_offline_ref=is_offline_ref, is_online_ref=is_online_ref, is_mutation=is_mutation, sr_list=sr_list, exp_time=exp_time)
+def repair_ques(
+    ques_dir_path, is_offline_ref, is_online_ref, is_mutation, sr_list, exp_time
+):
+    br = BlockRepair(
+        ques_dir_path,
+        is_offline_ref=is_offline_ref,
+        is_online_ref=is_online_ref,
+        is_mutation=is_mutation,
+        sr_list=sr_list,
+        exp_time=exp_time,
+    )
     return br.run()
 
 
-def repair_dataset(data_dir_path, ques_name_list, is_offline_ref, is_online_ref, sr_list, exp_time, is_csv_log, is_mutation):
+def repair_dataset(
+    data_dir_path,
+    ques_name_list,
+    is_offline_ref,
+    is_online_ref,
+    sr_list,
+    exp_time,
+    is_csv_log,
+    is_mutation,
+    output_dir="/output",
+):
     if ques_name_list is None:
         ques_name_list = list(os.listdir(data_dir_path))
 
     for ques_dir_name in ques_name_list:
         ques_dir_path = data_dir_path + "/" + ques_dir_name
 
-        ques_perf_map = repair_ques(ques_dir_path, is_offline_ref, is_online_ref, is_mutation, sr_list, exp_time)
+        ques_perf_map = repair_ques(
+            ques_dir_path, is_offline_ref, is_online_ref, is_mutation, sr_list, exp_time
+        )
 
         online_or_offline = None
         if is_online_ref:
@@ -87,9 +129,8 @@ def repair_dataset(data_dir_path, ques_name_list, is_offline_ref, is_online_ref,
         else:
             online_or_offline = "norefactor"
 
-
         if is_csv_log:
-            perf_to_csv(ques_dir_path, ques_perf_map, online_or_offline)
+            perf_to_csv(ques_dir_path, ques_perf_map, online_or_offline, data_dir_path, output_dir)
 
 
 def oro_dataset(data_dir_path, ques_name_list, sr_list, exp_time):
@@ -116,7 +157,7 @@ def cmb_csv_logs(data_dir_path, online_or_offline):
         os.makedirs(ir_dir_path)
 
     global_csv_path = ir_dir_path + "/refactory_" + online_or_offline + ".csv"
-    with open(global_csv_path, 'w') as f:
+    with open(global_csv_path, "w") as f:
         csv_w = csv.DictWriter(f, fieldnames=csv_header)
         csv_w.writeheader()
         for ques_dir_name in os.listdir(data_dir_path):
@@ -130,9 +171,9 @@ def cmb_csv_logs(data_dir_path, online_or_offline):
                     for row in csv_r:
                         csv_w.writerow(row)
 
-
     import pandas as pd
+
     df = pd.read_csv(global_csv_path, header=0)
-    print(df.groupby("Status").count()[['File Name']])
+    print(df.groupby("Status").count()[["File Name"]])
     print("\n\n")
-    print(df.groupby("Match (Rfty Code)").count()[['File Name']])
+    print(df.groupby("Match (Rfty Code)").count()[["File Name"]])

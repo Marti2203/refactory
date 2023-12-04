@@ -1,5 +1,5 @@
-FROM ubuntu:18.10
-MAINTAINER Yang Hu <huyang0905@gmail.com>
+FROM ubuntu:20.04
+MAINTAINER Martin Mirchev <mmirchev@comp.nus.edu.sg>
 
 # Install basic dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config git python-dev gcc wget vim zip ca-certificates

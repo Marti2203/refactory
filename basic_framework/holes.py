@@ -13,7 +13,14 @@ import time
 import keyword
 from token import *
 from builtins import open as _builtin_open
-from basic_framework.f1x import SearchSpaceList, ExprGroup, ExprGenerator, SearchSpace, DepthTrace, TERelation
+from basic_framework.f1x import (
+    SearchSpaceList,
+    ExprGroup,
+    ExprGenerator,
+    SearchSpace,
+    DepthTrace,
+    TERelation,
+)
 from basic_framework.utils import FastEvaluator, get_token_list
 from basic_framework.exec import MemoryGuarder, fast_eval
 
@@ -37,7 +44,7 @@ class Holes:
 
     expr_gen = ExprGenerator()
 
-    ssl = SearchSpaceList() # search space list
+    ssl = SearchSpaceList()  # search space list
 
     curr_ss = SearchSpace()
 
@@ -45,7 +52,7 @@ class Holes:
 
     dt = DepthTrace()
 
-    ldt_dict = {} # restrict the loop number
+    ldt_dict = {}  # restrict the loop number
 
     comp_dict = {}
 
@@ -82,14 +89,16 @@ class Holes:
         for i in range(len(token_list)):
             token = token_list[i]
             token_type = token.exact_type
-            if tok_name[token_type] == "NAME" and \
-                not keyword.iskeyword(token.string) and \
-                    token.string in var_dict.keys():
+            if (
+                tok_name[token_type] == "NAME"
+                and not keyword.iskeyword(token.string)
+                and token.string in var_dict.keys()
+            ):
                 t_start = token.start[1]
                 t_end = token.end[1]
                 str_list.append(expr_str[last_end:t_start])
 
-                str_list.append("var_dict[\'" + token.string + "\']")
+                str_list.append("var_dict['" + token.string + "']")
                 last_end = t_end
         str_list.append(expr_str[last_end:])
         return "".join(str_list)
@@ -126,9 +135,7 @@ class Holes:
             times_list = list(cls.curr_eg.expr_dict.keys())
             times_list.sort()
             for times_a in times_list:
-                if times_a > times and \
-                        ln == cls.curr_eg.expr_dict[times_a][2]:
-
+                if times_a > times and ln == cls.curr_eg.expr_dict[times_a][2]:
                     expr_rec = cls.curr_eg.get_expr_rec(times_a, ln)
                     expr_list = expr_rec.repr_expr_list
                     score_list = expr_rec.repr_score_list
@@ -138,19 +145,24 @@ class Holes:
                     expr_list = cls.curr_ss.get_expr_list(ln)
                     score_list = cls.curr_ss.get_score_list(ln)
                 else:
-
                     if ssf == "cond":
-                        expr_list, score_list = cls.expr_gen.gen_cond_ss(pre_expr_str, var_dict, k_best = 50)
+                        expr_list, score_list = cls.expr_gen.gen_cond_ss(
+                            pre_expr_str, var_dict, k_best=50
+                        )
                     elif ssf == "assign":
-                        expr_list, score_list = cls.expr_gen.gen_assign_ss(pre_expr_str, var_dict, k_best = 10)
+                        expr_list, score_list = cls.expr_gen.gen_assign_ss(
+                            pre_expr_str, var_dict, k_best=10
+                        )
                     elif ssf == "simple_assign":
-                        expr_list, score_list = cls.expr_gen.gen_assign_ss(pre_expr_str, var_dict, k_best=5, is_simple=True)
+                        expr_list, score_list = cls.expr_gen.gen_assign_ss(
+                            pre_expr_str, var_dict, k_best=5, is_simple=True
+                        )
                     elif ssf == "init":
                         expr_list, score_list = cls.expr_gen_init_ss(var_dict)
                     else:
                         raise cls.NoSSException()
 
-            assert (len(expr_list) > 0)
+            assert len(expr_list) > 0
             ter = TERelation()
             ter.add_expr_list_ws_p(expr_list, score_list, var_dict)
             expr_rec_list = ter.get_expr_rec_list()
@@ -166,9 +178,8 @@ class Holes:
         res = fast_eval(selected_expr, var_dict)
         cls.dt.update_times()
 
-        cls.in_genhole_time += (time.process_time() - start_time)
+        cls.in_genhole_time += time.process_time() - start_time
         return res
-
 
     @classmethod
     def condition_hole(cls, ln, pre_cond_str, var_dict):
@@ -186,17 +197,25 @@ class Holes:
     def expr_gen_init_ss(cls, var_dict):
         expr_list = []
         score_list = []
-        init_expr_list = ["0", "0.0", "\"\"", "True", "list()", "set()", "dict()", "tuple()"]
+        init_expr_list = [
+            "0",
+            "0.0",
+            '""',
+            "True",
+            "list()",
+            "set()",
+            "dict()",
+            "tuple()",
+        ]
         for var_name in var_dict.keys():
             for init_expr in init_expr_list:
-                expr_list.append("var_dict[\"" + var_name + "\"] = " + init_expr)
+                expr_list.append('var_dict["' + var_name + '"] = ' + init_expr)
                 score_list.append(0.1)
         return expr_list, score_list
 
     @classmethod
     def init_hole(cls, ln, var_dict):
         return cls.generic_hole(ln, "", var_dict, "init")
-
 
     @classmethod
     def method_hole(cls, ln, pre_invoke_str, var_dict):
@@ -209,7 +228,7 @@ class Holes:
     @classmethod
     def iil_hole(cls, ln):
         """This hole is used to sense large or infinite loop
-            "iil" means "immune to infinite loop"
+        "iil" means "immune to infinite loop"
         """
         if ln not in cls.ldt_dict.keys():
             cls.ldt_dict[ln] = DepthTrace()
@@ -233,8 +252,10 @@ class Holes:
                 return False
         else:
             close_type_list = ["<class 'list'>", "<class 'tuple'>"]
-            if str(type(object_a)) in close_type_list and \
-                    str(type(object_b)) in close_type_list:
+            if (
+                str(type(object_a)) in close_type_list
+                and str(type(object_b)) in close_type_list
+            ):
                 la = list(object_a)
                 lb = list(object_b)
                 if la == lb:
@@ -255,8 +276,9 @@ class Holes:
         for k, v in var_dict.items():
             if k not in cls.vari_hist.keys():
                 cls.vari_hist[k] = []
-            if len(cls.vari_hist[k]) == 0 or \
-                    not cls.is_object_equal(cls.vari_hist[k][-1], v):
+            if len(cls.vari_hist[k]) == 0 or not cls.is_object_equal(
+                cls.vari_hist[k][-1], v
+            ):
                 cls.vari_hist[k].append(v)
 
         for k1, v1 in var_dict.items():
@@ -272,9 +294,10 @@ class Holes:
                     if comb_v is not None:
                         if expr_str not in cls.vari_hist.keys():
                             cls.vari_hist[expr_str] = []
-                        if len(cls.vari_hist[expr_str]) == 0 or not cls.is_object_equal(cls.vari_hist[expr_str][-1], comb_v):
+                        if len(cls.vari_hist[expr_str]) == 0 or not cls.is_object_equal(
+                            cls.vari_hist[expr_str][-1], comb_v
+                        ):
                             cls.vari_hist[expr_str].append(comb_v)
-
 
     class HistTLEException(Exception):
         pass

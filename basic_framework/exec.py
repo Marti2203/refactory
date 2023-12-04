@@ -15,8 +15,9 @@ from io import StringIO
 def run_program_to(code, front_code, end_code, entry_code, timeout):
     from basic_framework.holes import Holes
 
-    thd = threading.Thread(target=run_core,
-                           args=(code, front_code, end_code, entry_code))
+    thd = threading.Thread(
+        target=run_core, args=(code, front_code, end_code, entry_code)
+    )
 
     Holes.is_stop = False
     Holes.real_output = ""
@@ -41,11 +42,17 @@ def run_core(code, front_code, end_code, entry_code):
     if "print(" not in entry_code:
         entry_code = "print(" + entry_code.strip() + ")\n"
 
-    final_code = hole_hdr_code + "\n\n" + \
-                 front_code + "\n\n" + \
-                 code + "\n\n" + \
-                 end_code + "\n\n" + \
-                 entry_code
+    final_code = (
+        hole_hdr_code
+        + "\n\n"
+        + front_code
+        + "\n\n"
+        + code
+        + "\n\n"
+        + end_code
+        + "\n\n"
+        + entry_code
+    )
     try:
         exec(final_code, globals())
     except DepthTrace.MaxDepthException:
@@ -66,7 +73,7 @@ def run_core(code, front_code, end_code, entry_code):
 
 def fast_eval(expr, var_dict):
     if "lambda" not in expr:
-        exp_as_func = eval('lambda var_dict: ' + expr)
+        exp_as_func = eval("lambda var_dict: " + expr)
         return exp_as_func(var_dict)
     return eval(expr)
 
@@ -74,8 +81,8 @@ def fast_eval(expr, var_dict):
 class MemoryGuarder:
     def __init__(self):
         self.mc = 0
-        self.bound = 4 # GB
-        self.set_max_runtime(self.bound*1024*1024*1024)
+        self.bound = 4  # GB
+        self.set_max_runtime(self.bound * 1024 * 1024 * 1024)
 
     def set_max_runtime(self, maxsize):
         soft, hard = resource.getrlimit(resource.RLIMIT_AS)

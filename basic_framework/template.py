@@ -9,7 +9,6 @@ def get_temp_cons_lists(corr_code_list):
     ref_temp_list = []
     ref_const_list = []
 
-    
     for corr_code in corr_code_list:
         ref_stat_vari_names = get_vari_names(corr_code)
 
@@ -49,7 +48,7 @@ def ext_temp_list(code, vari_set):
             key_word_begin = "while"
             key_word_end = ":"
         elif is_assign_stat(line):
-            if any([token.string=="return" for token in token_list]):
+            if any([token.string == "return" for token in token_list]):
                 key_word_begin = "return"
                 key_word_end = None
             else:

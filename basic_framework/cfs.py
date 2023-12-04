@@ -27,14 +27,12 @@ def cfs_map_equal(cfs_map_a, cfs_map_b):
     for cfs_func in cfs_map_a.keys():
         _, stru_list_a, indent_list_a = cfs_map_a[cfs_func]
         _, stru_list_b, indent_list_b = cfs_map_b[cfs_func]
-        if stru_list_a != stru_list_b or \
-                indent_list_a != indent_list_b:
+        if stru_list_a != stru_list_b or indent_list_a != indent_list_b:
             return False
     return True
 
 
 def get_func_map(code):
-
     class FuncVisitor(ast.NodeVisitor):
         def __init__(self):
             super()
@@ -65,12 +63,12 @@ def get_func_cfs(code):
         if is_method_sign(line):
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('sig')
+            stru_list.append("sig")
             indent_list.append(curr_ind)
             curr_ind += 4
         elif is_if_stat(line):
             block_list.append(block_code)
-            stru_list.append('bb')
+            stru_list.append("bb")
             indent_list.append(curr_ind)
 
             line_ind = get_indent(line)
@@ -86,12 +84,12 @@ def get_func_cfs(code):
 
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('if')
+            stru_list.append("if")
             indent_list.append(line_ind)
             curr_ind = line_ind + 4
         elif is_elif_stat(line):
             block_list.append(block_code)
-            stru_list.append('bb')
+            stru_list.append("bb")
             indent_list.append(curr_ind)
 
             line_ind = get_indent(line)
@@ -103,12 +101,12 @@ def get_func_cfs(code):
 
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('elif')
+            stru_list.append("elif")
             indent_list.append(get_indent(line))
             curr_ind = get_indent(line) + 4
         elif is_else_stat(line):
             block_list.append(block_code)
-            stru_list.append('bb')
+            stru_list.append("bb")
             indent_list.append(curr_ind)
 
             line_ind = get_indent(line)
@@ -120,12 +118,12 @@ def get_func_cfs(code):
 
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('else')
+            stru_list.append("else")
             indent_list.append(get_indent(line))
             curr_ind = get_indent(line) + 4
         elif is_for_loop_stat(line):
             block_list.append(block_code)
-            stru_list.append('bb')
+            stru_list.append("bb")
             indent_list.append(curr_ind)
 
             line_ind = get_indent(line)
@@ -141,12 +139,12 @@ def get_func_cfs(code):
 
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('for')
+            stru_list.append("for")
             indent_list.append(line_ind)
             curr_ind = line_ind + 4
         elif is_while_loop_stat(line):
             block_list.append(block_code)
-            stru_list.append('bb')
+            stru_list.append("bb")
             indent_list.append(curr_ind)
 
             line_ind = get_indent(line)
@@ -162,7 +160,7 @@ def get_func_cfs(code):
 
             block_code = ""
             block_list.append(line + "\n")
-            stru_list.append('while')
+            stru_list.append("while")
             indent_list.append(line_ind)
             curr_ind = line_ind + 4
         else:
@@ -172,7 +170,7 @@ def get_func_cfs(code):
             elif ind > curr_ind:
                 for tmp_ind in range(curr_ind, ind, 4):
                     block_list.append(block_code)
-                    stru_list.append('bb')
+                    stru_list.append("bb")
                     indent_list.append(tmp_ind)
                     block_code = ""
                 block_code = line + "\n"
@@ -180,14 +178,14 @@ def get_func_cfs(code):
             else:
                 for tmp_ind in range(curr_ind, ind, -4):
                     block_list.append(block_code)
-                    stru_list.append('bb')
+                    stru_list.append("bb")
                     indent_list.append(tmp_ind)
                     block_code = ""
                 block_code = line + "\n"
                 curr_ind = ind
     if len(block_code) > 0:
         block_list.append(block_code)
-        stru_list.append('bb')
+        stru_list.append("bb")
         curr_ind = get_indent(block_code.split("\n")[0])
         indent_list.append(curr_ind)
         block_code = ""
@@ -195,11 +193,10 @@ def get_func_cfs(code):
             for ind in range(curr_ind - 4, 0, -4):
                 block_list.append(block_code)
                 block_code = ""
-                stru_list.append('bb')
+                stru_list.append("bb")
                 indent_list.append(ind)
 
-    assert (len(block_list) == len(stru_list) and
-            len(block_list) == len(indent_list))
+    assert len(block_list) == len(stru_list) and len(block_list) == len(indent_list)
     return block_list, stru_list, indent_list
 
 
@@ -213,6 +210,7 @@ def cfs_mutation(bug_code, corr_code):
 
     lose_func_list = []
     from basic_framework.distance import cpr_stru_list
+
     for func_name in corr_cfs_map.keys():
         corr_bb_list, corr_stru_list, corr_indent_list = corr_cfs_map[func_name]
         corr_stru_str = cpr_stru_list(corr_stru_list)
@@ -224,12 +222,12 @@ def cfs_mutation(bug_code, corr_code):
             edit_list = []
             bug_bb_list, bug_stru_list, bug_indent_list = bug_cfs_map[func_name]
 
-            if bug_stru_list == corr_stru_list and \
-                    bug_indent_list == corr_indent_list:
+            if bug_stru_list == corr_stru_list and bug_indent_list == corr_indent_list:
                 pass
             else:
                 bug_stru_str = cpr_stru_list(bug_stru_list)
                 import Levenshtein
+
                 edit_list = Levenshtein.editops(bug_stru_str, corr_stru_str)
 
             insert_map = {}
@@ -241,9 +239,13 @@ def cfs_mutation(bug_code, corr_code):
                     if src_idx not in insert_map.keys():
                         insert_map[src_idx] = []
 
-                    flt_corr_bb_list = [corr_bb_list[idx] for idx in range(len(corr_stru_list)) if corr_stru_list[idx] == corr_stru_list[dst_idx]]
+                    flt_corr_bb_list = [
+                        corr_bb_list[idx]
+                        for idx in range(len(corr_stru_list))
+                        if corr_stru_list[idx] == corr_stru_list[dst_idx]
+                    ]
 
-                    assert(len(flt_corr_bb_list) > 0)
+                    assert len(flt_corr_bb_list) > 0
                     sel_corr_bb = random.sample(flt_corr_bb_list, 1)[0]
 
                     insert_map[src_idx].append(sel_corr_bb)
@@ -261,7 +263,7 @@ def cfs_mutation(bug_code, corr_code):
             if len(bug_bb_list) in insert_map.keys():
                 new_bug_bb_list.extend(insert_map[len(bug_bb_list)])
 
-            assert(len(corr_indent_list) == len(new_bug_bb_list))
+            assert len(corr_indent_list) == len(new_bug_bb_list)
 
             for idx in range(len(corr_indent_list)):
                 o_ind_bb, _ = rm_bb_indent(new_bug_bb_list[idx])

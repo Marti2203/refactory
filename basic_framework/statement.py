@@ -9,6 +9,7 @@ from token import *
 from io import StringIO
 from tokenize import generate_tokens
 
+
 # get indentation from a statement
 def get_indent(statement):
     token_list = get_token_list(statement)
@@ -49,7 +50,11 @@ def get_token_range(token_list, token_name):
 
 # judge the type of a statement
 def is_cond_stat(statement):
-    return is_if_stat(statement) or is_elif_stat(statement) or is_while_loop_stat(statement)
+    return (
+        is_if_stat(statement)
+        or is_elif_stat(statement)
+        or is_while_loop_stat(statement)
+    )
 
 
 def is_loop_stat(statement):
@@ -78,13 +83,13 @@ def is_elif_stat(statement):
 
 
 def is_else_stat(statement):
-        statement = statement.strip()
-        token_list = get_token_list(statement)
-        if len(token_list) == 0:
-            return False
-        if token_list[0].string == "else":
-            return True
+    statement = statement.strip()
+    token_list = get_token_list(statement)
+    if len(token_list) == 0:
         return False
+    if token_list[0].string == "else":
+        return True
+    return False
 
 
 def is_for_loop_stat(statement):
@@ -118,8 +123,13 @@ def is_token_in_stat(statement, token_str):
 def is_assign_stat(statement):
     token_list = get_token_list(statement)
     for token in token_list:
-        if tok_name[token.exact_type] in ["EQUAL","PLUSEQUAL","MINEQUAL","STAREQUAL","SLASHEQUAL"] and \
-            token.string in ["=", "+=", "-=", "*=", "/="]:
+        if tok_name[token.exact_type] in [
+            "EQUAL",
+            "PLUSEQUAL",
+            "MINEQUAL",
+            "STAREQUAL",
+            "SLASHEQUAL",
+        ] and token.string in ["=", "+=", "-=", "*=", "/="]:
             return True
         elif token.string == "return":
             return True
@@ -135,6 +145,8 @@ def is_method_sign(statement):
 
 
 re_method_call = re.compile("\w*\(")
+
+
 def has_method_call(statement):
     m = re_method_call.search(statement)
     return m is not None and not is_method_sign(statement)
@@ -148,7 +160,7 @@ def get_vari_in_sig(statement):
         if token.string == "def":
             l = statement.find("(")
             r = statement.rfind(")")
-            statement = statement[l:r + 1]
+            statement = statement[l : r + 1]
             token_list_b = get_token_list(statement)
             for token_b in token_list_b:
                 if tok_name[token_b.exact_type] == "NAME":
@@ -157,7 +169,6 @@ def get_vari_in_sig(statement):
 
 
 def get_vari_in_for(statement):
-
     vari_list = []
 
     token_list = get_token_list(statement)

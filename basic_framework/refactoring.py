@@ -9,7 +9,7 @@ from basic_framework.cfs import get_cfs_map, get_func_cfs, get_func_map
 
 class Reporter:
     def __init__(self, buggy_code_list, init_rep_cnt=10):
-        assert (len(buggy_code_list) > 0)
+        assert len(buggy_code_list) > 0
 
         self.rep_cnt = init_rep_cnt
         self.buggy_code_cfs_map_list = []
@@ -31,8 +31,10 @@ class Reporter:
 
                 is_partial_success = False
                 for cluster in cluster_list:
-                    if cluster["stru"] == buggy_stru_list and \
-                            cluster["indent"] == buggy_indent_list:
+                    if (
+                        cluster["stru"] == buggy_stru_list
+                        and cluster["indent"] == buggy_indent_list
+                    ):
                         is_partial_success = True
                         break
 
@@ -42,10 +44,9 @@ class Reporter:
 
             if is_success:
                 succ_cnt += 1
-        return succ_cnt/len(self.buggy_code_cfs_map_list)
+        return succ_cnt / len(self.buggy_code_cfs_map_list)
 
     def report(self, time_left, cluster_list_map):
-
         if self.rep_cnt > 0:
             self.rep_cnt = self.rep_cnt - 1
             return
@@ -58,13 +59,28 @@ class Reporter:
             stru_cnt *= len(cluster_list_map[func_name])
 
         if time_left is not None:
-            print("Left Time: %.2f," % time_left, "Mathing Rate: %.4f," % mr, "# Structures: " + str(stru_cnt), end='\r')
+            print(
+                "Left Time: %.2f," % time_left,
+                "Mathing Rate: %.4f," % mr,
+                "# Structures: " + str(stru_cnt),
+                end="\r",
+            )
         else:
-            print("Mathing Rate: %.4f," % mr, "# Structures: " + str(stru_cnt), end='\r')
+            print(
+                "Mathing Rate: %.4f," % mr, "# Structures: " + str(stru_cnt), end="\r"
+            )
 
 
 class Refactoring:
-    def __init__(self, corr_code_map=None, timeout=None, max_depth=10, reporter=None, debug=False, track=True):#5*60
+    def __init__(
+        self,
+        corr_code_map=None,
+        timeout=None,
+        max_depth=10,
+        reporter=None,
+        debug=False,
+        track=True,
+    ):  # 5*60
         self.corr_code_map = corr_code_map
         self.timeout = timeout
         self.max_depth = max_depth
@@ -72,9 +88,9 @@ class Refactoring:
         self.debug = debug
         self.track = track
 
-        # function name list 
+        # function name list
         self.__init_cfl_map()
-        
+
         # funcName(A):[{"structure":["sig", "if"], "indent":[1,2], "code":["def A(a) ...", "def A(b) ..."]}]
         # mapping of code structure (per funcName) to multiple codes (having same structure).
         # Given buggy, match its funcName, struct, indent (with this dict), and then pick a random code
@@ -83,14 +99,18 @@ class Refactoring:
         self.rule_list_map = {}
 
     def to_csv(self, csv_path):
-        with open(csv_path, 'w') as f:
+        with open(csv_path, "w") as f:
             csv_w = csv.writer(f)
-            csv_w.writerow(["Correct File",
-                            "Function Name",
-                            "Rule ID",
-                            "Depth",
-                            "Before-Refactor Code",
-                            "After-Refactor Code"])
+            csv_w.writerow(
+                [
+                    "Correct File",
+                    "Function Name",
+                    "Rule ID",
+                    "Depth",
+                    "Before-Refactor Code",
+                    "After-Refactor Code",
+                ]
+            )
             for csv_record in self.csv_record_list:
                 csv_w.writerow(csv_record)
 
@@ -102,9 +122,7 @@ class Refactoring:
         cluster_list = self.cluster_list_map[func_name]
         _, stru_list, indent_list = get_func_cfs(new_code)
         for cluster in cluster_list:
-            if cluster["stru"] == stru_list and \
-                    cluster["indent"] == indent_list:
-
+            if cluster["stru"] == stru_list and cluster["indent"] == indent_list:
                 if root_file_name not in cluster["root_file_name"]:
                     cluster["code"].append(new_code)
 
@@ -117,13 +135,15 @@ class Refactoring:
                 else:
                     return False
 
-
-
-        cluster_list.append({"stru": stru_list,
-                             "indent": indent_list,
-                             "code":[new_code],
-                             "root_file_name":[root_file_name],
-                             "rule_id": [rule_id_str]})
+        cluster_list.append(
+            {
+                "stru": stru_list,
+                "indent": indent_list,
+                "code": [new_code],
+                "root_file_name": [root_file_name],
+                "rule_id": [rule_id_str],
+            }
+        )
         self.rule_list_map[new_code] = rule_id_list
 
         return True
@@ -139,7 +159,12 @@ class Refactoring:
                     corr_func_list_map[func_name] = []
                 corr_func_list_map[func_name].append((file_name, func_code))
 
-        max_len = max([len(corr_func_list_map[func_name]) for func_name in corr_func_list_map.keys()])
+        max_len = max(
+            [
+                len(corr_func_list_map[func_name])
+                for func_name in corr_func_list_map.keys()
+            ]
+        )
         del_func_name_list = []
         for func_name in corr_func_list_map.keys():
             if max_len - len(corr_func_list_map[func_name]) > 5:
@@ -149,7 +174,6 @@ class Refactoring:
             del corr_func_list_map[func_name]
 
         self.cfl_map = corr_func_list_map
-
 
     class TimeoutException(Exception):
         pass
@@ -178,26 +202,35 @@ class Refactoring:
                 if depth == 0:
                     for func_name, corr_code_list in self.cfl_map.items():
                         for file_name, corr_code in corr_code_list:
-
                             init_rule_list = []
-                            if self.__update(func_name, corr_code, file_name, init_rule_list):
+                            if self.__update(
+                                func_name, corr_code, file_name, init_rule_list
+                            ):
                                 code_list_map[func_name].append(corr_code)
                                 root_fn_lst_map[func_name].append(file_name)
 
-                                csv_record = [file_name, func_name, -1, depth, corr_code, corr_code]
+                                csv_record = [
+                                    file_name,
+                                    func_name,
+                                    -1,
+                                    depth,
+                                    corr_code,
+                                    corr_code,
+                                ]
                                 self.csv_record_list.append(csv_record)
 
                     if self.reporter is not None:
                         if self.timeout is not None:
                             time_elapse = time.process_time() - start_time
-                            self.reporter.report(self.timeout - time_elapse, self.cluster_list_map)
+                            self.reporter.report(
+                                self.timeout - time_elapse, self.cluster_list_map
+                            )
                             start_time = time.process_time()
                             self.timeout = self.timeout - time_elapse
                         else:
                             self.reporter.report(None, self.cluster_list_map)
 
                 else:
-
                     for func_name in self.cfl_map.keys():
                         if self.timeout is not None:
                             self.time_checker(start_time)
@@ -205,7 +238,9 @@ class Refactoring:
                         tmp_code_list = []
                         tmp_root_fn_list = []
 
-                        tmp_code_map = dict(zip(code_list_map[func_name], root_fn_lst_map[func_name]))
+                        tmp_code_map = dict(
+                            zip(code_list_map[func_name], root_fn_lst_map[func_name])
+                        )
                         for code, root_fn in tmp_code_map.items():
                             old_rule_id_list = self.rule_list_map[code]
 
@@ -215,21 +250,22 @@ class Refactoring:
                             if self.reporter is not None:
                                 if self.timeout is not None:
                                     time_elapse = time.process_time() - start_time
-                                    self.reporter.report(self.timeout - time_elapse, self.cluster_list_map)
+                                    self.reporter.report(
+                                        self.timeout - time_elapse,
+                                        self.cluster_list_map,
+                                    )
                                     start_time = time.process_time()
                                     self.timeout = self.timeout - time_elapse
                                 else:
                                     self.reporter.report(None, self.cluster_list_map)
 
                             for rule_id in range(1, 22):
-
-
                                 rft_code_list = self.refactor(code, rule_id)
 
                                 for rft_code in rft_code_list:
                                     if self.debug:
                                         try:
-                                            compile(rft_code, '<string>', 'exec')
+                                            compile(rft_code, "<string>", "exec")
                                         except SyntaxError as se:
                                             print(str(se))
                                             print("Rule", rule_id)
@@ -238,18 +274,28 @@ class Refactoring:
                                             print(code)
                                             exit(0)
                                     new_rule_id_list = old_rule_id_list + [rule_id]
-                                    if self.__update(func_name, rft_code, root_fn, new_rule_id_list):
+                                    if self.__update(
+                                        func_name, rft_code, root_fn, new_rule_id_list
+                                    ):
                                         tmp_code_list.append(rft_code)
                                         tmp_root_fn_list.append(root_fn)
 
                                         if csv_report:
-                                            csv_record = [root_fn, func_name, rule_id, depth, code, rft_code]
+                                            csv_record = [
+                                                root_fn,
+                                                func_name,
+                                                rule_id,
+                                                depth,
+                                                code,
+                                                rft_code,
+                                            ]
                                             self.csv_record_list.append(csv_record)
 
                         code_list_map[func_name] = tmp_code_list
                         root_fn_lst_map[func_name] = tmp_root_fn_list
         except Exception as e:
             import traceback, sys
+
             print(str(e), file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
 
@@ -291,8 +337,10 @@ class Refactoring:
         return []
 
     def refactor_rule_two(self, code):
-        '''(P If(C1){B1 R1} If(C2){B2} S) <--> (P If(C1){B1 R1} Elif(C2){B2} S)'''
-        refactored_code_list = [] # Each rule generates (single application) on multi-location
+        """(P If(C1){B1 R1} If(C2){B2} S) <--> (P If(C1){B1 R1} Elif(C2){B2} S)"""
+        refactored_code_list = (
+            []
+        )  # Each rule generates (single application) on multi-location
 
         cfs_map = get_cfs_map(code)
         for cfs_name in cfs_map.keys():
@@ -300,22 +348,23 @@ class Refactoring:
             for cfs_name_b in cfs_map.keys():
                 if cfs_name_b != cfs_name:
                     not_mutated_code += "".join(cfs_map[cfs_name_b][0]) + "\n\n"
-            
-             # funcName(A):[{"structure":["sig", "if"], "indent":[1,2], "basic-blocks":["def A(a)", "if C1" "..."]}]
+
+            # funcName(A):[{"structure":["sig", "if"], "indent":[1,2], "basic-blocks":["def A(a)", "if C1" "..."]}]
             bb_list, stru_list, indent_list = cfs_map[cfs_name]
 
             for i in range(len(bb_list)):
-                if stru_list[i] == "sig": # signature/function def
+                if stru_list[i] == "sig":  # signature/function def
                     continue
 
-                # If block above is basic-block (bb), further indent (indent+4) 
+                # If block above is basic-block (bb), further indent (indent+4)
                 # (i-2, since i-1 is a dummy empty block), where i=second if block
-                if stru_list[i] == "if" and \
-                        i-2 >= 0 and \
-                        stru_list[i-2] == "bb" and \
-                        indent_list[i-2] == indent_list[i] + 4 and \
-                        bb_list[i-2] != "":
-
+                if (
+                    stru_list[i] == "if"
+                    and i - 2 >= 0
+                    and stru_list[i - 2] == "bb"
+                    and indent_list[i - 2] == indent_list[i] + 4
+                    and bb_list[i - 2] != ""
+                ):
                     last_ei_bb_for = False
                     for j in range(i - 1, -1, -1):
                         if indent_list[j] == indent_list[i]:
@@ -324,20 +373,20 @@ class Refactoring:
                             break
 
                     # get tokens of last statement
-                    token_list = get_token_list(bb_list[i-2].split("\n")[-2])
+                    token_list = get_token_list(bb_list[i - 2].split("\n")[-2])
                     can_refactor = False
-                    
+
                     # check if the last statement is return (loop to skip indents)
                     for token in token_list:
-                        if token.string in ["return"] or \
-                                (not last_ei_bb_for and token.string in ["continue", "break"]):
+                        if token.string in ["return"] or (
+                            not last_ei_bb_for and token.string in ["continue", "break"]
+                        ):
                             can_refactor = True
                             break
 
                     if can_refactor:
                         for j in range(i - 1, -1, -1):
-                            if bb_list[j] != "" and \
-                                    indent_list[j] == indent_list[i]:
+                            if bb_list[j] != "" and indent_list[j] == indent_list[i]:
                                 if stru_list[j] in ["if", "elif"]:
                                     can_refactor = True
                                 else:
@@ -355,7 +404,9 @@ class Refactoring:
                             if token.string == ori:
                                 l = token.start[1]
                                 r = token.end[1]
-                                refactored_bb_code = bb_list[i][:l] + target + bb_list[i][r:] # repl if->elif
+                                refactored_bb_code = (
+                                    bb_list[i][:l] + target + bb_list[i][r:]
+                                )  # repl if->elif
                                 break
 
                         # remain code retained
@@ -368,11 +419,13 @@ class Refactoring:
                         refactored_code_list.append(not_mutated_code + refactored_code)
 
                 # Vice-versa (replace elif to if)
-                elif stru_list[i] == "elif" and \
-                        i-1>=0 and \
-                        stru_list[i-1] == "bb" and \
-                        indent_list[i-1] == indent_list[i] + 4 and \
-                        bb_list[i-1] != "":
+                elif (
+                    stru_list[i] == "elif"
+                    and i - 1 >= 0
+                    and stru_list[i - 1] == "bb"
+                    and indent_list[i - 1] == indent_list[i] + 4
+                    and bb_list[i - 1] != ""
+                ):
                     last_ei_bb_for = False
                     for j in range(i - 1, -1, -1):
                         if indent_list[j] == indent_list[i]:
@@ -383,8 +436,9 @@ class Refactoring:
                     token_list = get_token_list(bb_list[i - 1].split("\n")[-2])
                     can_refactor = False
                     for token in token_list:
-                        if token.string in ["return"] or \
-                                (not last_ei_bb_for and token.string in ["continue", "break"]):
+                        if token.string in ["return"] or (
+                            not last_ei_bb_for and token.string in ["continue", "break"]
+                        ):
                             can_refactor = True
                             break
 
@@ -398,7 +452,9 @@ class Refactoring:
                             if token.string == ori:
                                 l = token.start[1]
                                 r = token.end[1]
-                                refactored_bb_code = bb_list[i][:l] + target + bb_list[i][r:]
+                                refactored_bb_code = (
+                                    bb_list[i][:l] + target + bb_list[i][r:]
+                                )
                                 break
 
                         refactored_code = ""
@@ -412,7 +468,7 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_three(self, code):
-        '''(P If(C1){B1 R1} {B2} S) <--> (P If(C1){B1 R1} ELSE{B2} S)'''
+        """(P If(C1){B1 R1} {B2} S) <--> (P If(C1){B1 R1} ELSE{B2} S)"""
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -428,15 +484,19 @@ class Refactoring:
                 if stru_list[i] == "sig":
                     continue
 
-                if stru_list[i - 1] == "bb" and \
-                    indent_list[i - 1] > indent_list[i] and \
-                    bb_list[i] != "":
-
-                    idx_max_depth = i-1
+                if (
+                    stru_list[i - 1] == "bb"
+                    and indent_list[i - 1] > indent_list[i]
+                    and bb_list[i] != ""
+                ):
+                    idx_max_depth = i - 1
                     while True:
-                        if bb_list[idx_max_depth] == "" and \
-                                indent_list[idx_max_depth-1]>indent_list[idx_max_depth]:
-                            idx_max_depth = idx_max_depth-1
+                        if (
+                            bb_list[idx_max_depth] == ""
+                            and indent_list[idx_max_depth - 1]
+                            > indent_list[idx_max_depth]
+                        ):
+                            idx_max_depth = idx_max_depth - 1
                         else:
                             break
 
@@ -444,7 +504,9 @@ class Refactoring:
                     if bb_list[idx_max_depth] == "":
                         can_refactor = False
                     else:
-                        token_list = get_token_list(bb_list[idx_max_depth].split("\n")[-2])
+                        token_list = get_token_list(
+                            bb_list[idx_max_depth].split("\n")[-2]
+                        )
                         for token in token_list:
                             if token.string in ["return"]:
                                 can_refactor = True
@@ -477,7 +539,9 @@ class Refactoring:
                             add_indentation = False
                             for j in range(len(bb_list)):
                                 if i == j:
-                                    indent_str = "".join([" " for k in range(indent_list[i])])
+                                    indent_str = "".join(
+                                        [" " for k in range(indent_list[i])]
+                                    )
                                     refactored_code += indent_str + "else:\n"
                                     add_indentation = True
                                 if add_indentation:
@@ -492,7 +556,9 @@ class Refactoring:
                                 else:
                                     refactored_code += bb_list[j]
 
-                            refactored_code_list.append(not_mutated_code + refactored_code)
+                            refactored_code_list.append(
+                                not_mutated_code + refactored_code
+                            )
                         elif stru_list[i] == "else":
                             refactored_code = ""
                             del_indentation = False
@@ -510,16 +576,18 @@ class Refactoring:
                                                 refactored_code += ln[4:] + "\n"
                                 else:
                                     refactored_code += bb_list[j]
-                            refactored_code_list.append(not_mutated_code + refactored_code)
+                            refactored_code_list.append(
+                                not_mutated_code + refactored_code
+                            )
 
         return refactored_code_list
 
     def refactor_rule_four(self, code):
-        '''P S -> P If(*){Pass} S
-           P If(C1){B1}B2 S-> P If(C1){B1}Else{Pass}B2 S
-           P Elif(C1){B1}B2 S-> P Elif(C1){B1}Else{Pass}B2 S
-           P If(C1){B1}B2 S-> P If(C1){B1}Elif(*){Pass}B2 S
-        '''
+        """P S -> P If(*){Pass} S
+        P If(C1){B1}B2 S-> P If(C1){B1}Else{Pass}B2 S
+        P Elif(C1){B1}B2 S-> P Elif(C1){B1}Else{Pass}B2 S
+        P If(C1){B1}B2 S-> P If(C1){B1}Elif(*){Pass}B2 S
+        """
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -562,8 +630,9 @@ class Refactoring:
                         if indent_list[j] < indent_list[i]:
                             pos = -1
                             break
-                        elif indent_list[j] == indent_list[i] and \
-                                stru_list[j] != "elif":
+                        elif (
+                            indent_list[j] == indent_list[i] and stru_list[j] != "elif"
+                        ):
                             pos = j
                             break
 
@@ -594,7 +663,9 @@ class Refactoring:
                         if indent_list[j] < indent_list[i]:
                             pos = -1
                             break
-                        elif indent_list[j] == indent_list[i] and stru_list[j] != "elif":
+                        elif (
+                            indent_list[j] == indent_list[i] and stru_list[j] != "elif"
+                        ):
                             pos = j
                             break
 
@@ -618,9 +689,9 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_five(self, code):
-        '''P B S -> P If(False){*}B S
-           P If(C1){B1}B2 S-> P If(C1){B1}Elif(False){*}B2 S
-        '''
+        """P B S -> P If(False){*}B S
+        P If(C1){B1}B2 S-> P If(C1){B1}Elif(False){*}B2 S
+        """
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -663,7 +734,9 @@ class Refactoring:
                         if indent_list[j] < indent_list[i]:
                             pos = -1
                             break
-                        elif indent_list[j] == indent_list[i] and stru_list[j] != "elif":
+                        elif (
+                            indent_list[j] == indent_list[i] and stru_list[j] != "elif"
+                        ):
                             pos = j
                             break
 
@@ -688,10 +761,10 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_six(self, code):
-        '''P If(C1 and C2){B1}B2 S -> P If(C1){If(C2){B1}}B2 S
-           P If(C1 and C2){B1}B2 S -> P If(True){If(C1 and C2){B1}}B2 S
-           P If(C1 and C2){B1}B2 S -> P If(C1 and C2){If(True){B1}}B2 S
-        '''
+        """P If(C1 and C2){B1}B2 S -> P If(C1){If(C2){B1}}B2 S
+        P If(C1 and C2){B1}B2 S -> P If(True){If(C1 and C2){B1}}B2 S
+        P If(C1 and C2){B1}B2 S -> P If(C1 and C2){If(True){B1}}B2 S
+        """
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -706,7 +779,7 @@ class Refactoring:
             for i in range(len(bb_list)):
                 if stru_list[i] == "if":
                     can_split = True
-                    for j in range(i+1, len(bb_list)):
+                    for j in range(i + 1, len(bb_list)):
                         if indent_list[j] == indent_list[i]:
                             if stru_list[j] in ["elif", "else"]:
                                 can_split = False
@@ -723,10 +796,15 @@ class Refactoring:
                             if token_b.string == ":":
                                 r = token_b.start[1]
                         cond = bb_list[i][l:r].strip()
-                        if "and" in cond and "(" not in cond and ")" not in cond and "or" not in cond:
+                        if (
+                            "and" in cond
+                            and "(" not in cond
+                            and ")" not in cond
+                            and "or" not in cond
+                        ):
                             m = cond.find("and")
                             cond1 = cond[:m].strip()
-                            cond2 = cond[m + 4:].strip()
+                            cond2 = cond[m + 4 :].strip()
 
                             indent_str = "".join([" " for k in range(indent_list[i])])
 
@@ -750,7 +828,9 @@ class Refactoring:
                                                 refactored_code += "    " + ln + "\n"
                                 else:
                                     refactored_code += bb_list[j]
-                            refactored_code_list.append(not_mutated_code + refactored_code)
+                            refactored_code_list.append(
+                                not_mutated_code + refactored_code
+                            )
 
                         indent_str = "".join([" " for k in range(indent_list[i])])
 
@@ -803,7 +883,7 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_seven(self, code):
-        '''P If(C1){If(C2){B1}}B2 S -> P If(C1 and C2){B1}B2 S'''
+        """P If(C1){If(C2){B1}}B2 S -> P If(C1 and C2){B1}B2 S"""
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -816,13 +896,15 @@ class Refactoring:
             bb_list, stru_list, indent_list = cfs_map[cfs_name]
 
             for i in range(len(bb_list)):
-                if stru_list[i] == "if" and \
-                    i + 2 < len(bb_list) and \
-                    bb_list[i+1] == "" and \
-                    stru_list[i+2] == "if" and \
-                    indent_list[i]+4 == indent_list[i+2]:
+                if (
+                    stru_list[i] == "if"
+                    and i + 2 < len(bb_list)
+                    and bb_list[i + 1] == ""
+                    and stru_list[i + 2] == "if"
+                    and indent_list[i] + 4 == indent_list[i + 2]
+                ):
                     can_combine = True
-                    for j in range(i+1, len(bb_list)):
+                    for j in range(i + 1, len(bb_list)):
                         if indent_list[j] == indent_list[i]:
                             if stru_list[j] in ["elif", "else"]:
                                 can_combine = False
@@ -853,21 +935,23 @@ class Refactoring:
                         cond1 = bb_list[i][l:r].strip()
 
                         l = -1
-                        for token_b in get_token_list(bb_list[i+2]):
+                        for token_b in get_token_list(bb_list[i + 2]):
                             if token_b.string == "if":
                                 l = token_b.end[1]
                                 break
 
                         r = -1
-                        for token_b in get_token_list(bb_list[i+2]):
+                        for token_b in get_token_list(bb_list[i + 2]):
                             if token_b.string == ":":
                                 r = token_b.start[1]
 
-                        cond2 = bb_list[i+2][l:r].strip()
+                        cond2 = bb_list[i + 2][l:r].strip()
 
                         indent_str = "".join([" " for k in range(indent_list[i])])
                         refactored_bb = ""
-                        refactored_bb += indent_str + "if " + cond1 + " and " + cond2 + ":\n"
+                        refactored_bb += (
+                            indent_str + "if " + cond1 + " and " + cond2 + ":\n"
+                        )
 
                         del_indent = False
                         refactored_code = ""
@@ -895,7 +979,7 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_eight(self, code):
-        '''P Elif(C1){...} S -> P Else{If(C1){...}} S'''
+        """P Elif(C1){...} S -> P Else{If(C1){...}} S"""
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -908,7 +992,7 @@ class Refactoring:
             bb_list, stru_list, indent_list = cfs_map[cfs_name]
 
             for i in range(len(bb_list)):
-                if stru_list[i] == 'elif':
+                if stru_list[i] == "elif":
                     l = -1
                     for token_b in get_token_list(bb_list[i]):
                         if token_b.string == "elif":
@@ -934,23 +1018,24 @@ class Refactoring:
                             add_indent = True
                             continue
                         if add_indent:
-                            if indent_list[j] < indent_list[i] or \
-                                    (indent_list[j] == indent_list[i] and \
-                                    stru_list[j] not in ["else", "elif"]):
+                            if indent_list[j] < indent_list[i] or (
+                                indent_list[j] == indent_list[i]
+                                and stru_list[j] not in ["else", "elif"]
+                            ):
                                 refactored_code += bb_list[j]
                                 add_indent = False
                             else:
                                 ln_list = bb_list[j].split("\n")
                                 for ln in ln_list:
                                     if ln != "":
-                                        refactored_code += "    "+ ln + "\n"
+                                        refactored_code += "    " + ln + "\n"
                         else:
                             refactored_code += bb_list[j]
                     refactored_code_list.append(not_mutated_code + refactored_code)
         return refactored_code_list
 
     def refactor_rule_nine(self, code):
-        '''P Else{If(C1){...}} S -> P Elif(C1){...} S'''
+        """P Else{If(C1){...}} S -> P Elif(C1){...} S"""
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -963,34 +1048,35 @@ class Refactoring:
             bb_list, stru_list, indent_list = cfs_map[cfs_name]
 
             for i in range(len(bb_list)):
-                if stru_list[i] == 'else' and \
-                        i + 2 < len(bb_list) and \
-                        bb_list[i+1] == "" and \
-                        stru_list[i+2] == "if":
-
+                if (
+                    stru_list[i] == "else"
+                    and i + 2 < len(bb_list)
+                    and bb_list[i + 1] == ""
+                    and stru_list[i + 2] == "if"
+                ):
                     can_combine = True
-                    for j in range(i+3, len(bb_list)):
-                        if indent_list[j] == indent_list[i+2]:
+                    for j in range(i + 3, len(bb_list)):
+                        if indent_list[j] == indent_list[i + 2]:
                             if bb_list[j] != "":
                                 can_combine = False
                                 break
-                        elif indent_list[j] < indent_list[i+2]:
+                        elif indent_list[j] < indent_list[i + 2]:
                             break
 
                     if not can_combine:
                         continue
 
                     l = -1
-                    for token_b in get_token_list(bb_list[i+2]):
+                    for token_b in get_token_list(bb_list[i + 2]):
                         if token_b.string == "if":
                             l = token_b.end[1]
                             break
                     r = -1
-                    for token_b in get_token_list(bb_list[i+2]):
+                    for token_b in get_token_list(bb_list[i + 2]):
                         if token_b.string == ":":
                             r = token_b.start[1]
 
-                    cond = bb_list[i+2][l:r].strip()
+                    cond = bb_list[i + 2][l:r].strip()
                     indent_str = "".join([" " for k in range(indent_list[i])])
 
                     refactored_bb = ""
@@ -1003,7 +1089,7 @@ class Refactoring:
                             refactored_code += refactored_bb
                             dec_indent = True
                             continue
-                        if j == i+1 or j == i+2:
+                        if j == i + 1 or j == i + 2:
                             continue
                         if dec_indent:
                             if indent_list[j] <= indent_list[i]:
@@ -1020,11 +1106,11 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_eleven(self, code):
-        '''P For(... in lst){B1} S -> P If(len(lst)>0){For(... in lst){B1}} S
-           P For(... in lst){B1} S -> P If(len(lst)<=0){Pass}Else{For(... in lst){B1}} S
-           P While(C1){B1} S -> P If(C1){While(C1){B1}} S
-           P While(C1){B1} S -> P If(!C1){Pass}Else{While(C1){B1}} S
-        '''
+        """P For(... in lst){B1} S -> P If(len(lst)>0){For(... in lst){B1}} S
+        P For(... in lst){B1} S -> P If(len(lst)<=0){Pass}Else{For(... in lst){B1}} S
+        P While(C1){B1} S -> P If(C1){While(C1){B1}} S
+        P While(C1){B1} S -> P If(!C1){Pass}Else{While(C1){B1}} S
+        """
 
         refactored_code_list = []
 
@@ -1055,11 +1141,15 @@ class Refactoring:
 
                             indent_str = "".join([" " for k in range(indent_list[i])])
                             refactored_bb = ""
-                            refactored_bb += indent_str + "if len(" + seq_code + ") > 0:\n"
+                            refactored_bb += (
+                                indent_str + "if len(" + seq_code + ") > 0:\n"
+                            )
                             refactored_bb_list.append(refactored_bb)
 
                             refactored_bb = ""
-                            refactored_bb += indent_str + "if len(" + seq_code + ") == 0:\n"
+                            refactored_bb += (
+                                indent_str + "if len(" + seq_code + ") == 0:\n"
+                            )
                             refactored_bb += indent_str + "    pass\n"
                             refactored_bb += indent_str + "else:\n"
                             refactored_bb_list.append(refactored_bb)
@@ -1081,11 +1171,15 @@ class Refactoring:
 
                             indent_str = "".join([" " for k in range(indent_list[i])])
                             refactored_bb = ""
-                            refactored_bb += indent_str + "if len(" + range_code + ") > 0:\n"
+                            refactored_bb += (
+                                indent_str + "if len(" + range_code + ") > 0:\n"
+                            )
                             refactored_bb_list.append(refactored_bb)
 
                             refactored_bb = ""
-                            refactored_bb += indent_str + "if len(" + range_code + ") == 0:\n"
+                            refactored_bb += (
+                                indent_str + "if len(" + range_code + ") == 0:\n"
+                            )
                             refactored_bb += indent_str + "    pass\n"
                             refactored_bb += indent_str + "else:\n"
                             refactored_bb_list.append(refactored_bb)
@@ -1163,7 +1257,7 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_twelve(self, code):
-        '''P While(C1){B1} S -> P While(True){If(!C1){Break}B1} S'''
+        """P While(C1){B1} S -> P While(True){If(!C1){Break}B1} S"""
 
         refactored_code_list = []
 
@@ -1207,10 +1301,10 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_thirteen(self, code):
-        '''P If(C1){B1 J1} S -> P While(C1){B1 J1} S
-           P If(C1){B1} S -> P While(C1){B1 break} S
-           Note: no continue or break is in B1
-        '''
+        """P If(C1){B1 J1} S -> P While(C1){B1 J1} S
+        P If(C1){B1} S -> P While(C1){B1 break} S
+        Note: no continue or break is in B1
+        """
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -1225,13 +1319,18 @@ class Refactoring:
             for i in range(len(bb_list)):
                 if stru_list[i] == "if":
                     can_refactor = True
-                    for j in range(i+1,len(bb_list)):
+                    for j in range(i + 1, len(bb_list)):
                         if indent_list[i] < indent_list[j] and stru_list[j] == "bb":
                             ln_list = bb_list[j].split("\n")
                             for ln in ln_list:
-                                if ln !=  "":
+                                if ln != "":
                                     token_list = get_token_list(ln)
-                                    if any([token.string in ["continue", "break"] for token in token_list]):
+                                    if any(
+                                        [
+                                            token.string in ["continue", "break"]
+                                            for token in token_list
+                                        ]
+                                    ):
                                         can_refactor = False
                                         break
                             if not can_refactor:
@@ -1246,7 +1345,6 @@ class Refactoring:
                     if not can_refactor:
                         continue
 
-
                     l = -1
                     r = -1
                     refactored_bb = ""
@@ -1255,7 +1353,12 @@ class Refactoring:
                         if token.string == "if":
                             l = token.start[1]
                             r = token.end[1]
-                            refactored_bb += bb_list[i][:l] + "while " + bb_list[i][r:].strip() + "\n"
+                            refactored_bb += (
+                                bb_list[i][:l]
+                                + "while "
+                                + bb_list[i][r:].strip()
+                                + "\n"
+                            )
                             break
 
                     refactored_code = ""
@@ -1266,18 +1369,25 @@ class Refactoring:
                             beg_search = True
                         elif beg_search:
                             if indent_list[j] <= indent_list[i]:
-                                indent_str = "".join([" " for k in range(indent_list[i])])
+                                indent_str = "".join(
+                                    [" " for k in range(indent_list[i])]
+                                )
 
                                 need_break = True
-                                ln_list = bb_list[j-1].split("\n")
+                                ln_list = bb_list[j - 1].split("\n")
                                 for ln in ln_list:
                                     if ln != "":
                                         token_list = get_token_list(ln)
-                                        if any([token.string == "return" for token in token_list]):
+                                        if any(
+                                            [
+                                                token.string == "return"
+                                                for token in token_list
+                                            ]
+                                        ):
                                             need_break = False
                                             break
 
-                                if need_break: # this if condition can also be removed
+                                if need_break:  # this if condition can also be removed
                                     refactored_code += indent_str + "    break\n"
                                 refactored_code += bb_list[j]
                                 beg_search = False
@@ -1290,9 +1400,9 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_seventeen(self, code):
-        '''P B1 S-> P For(new_v in range(1)){B1} S
-           Note: no continue or break is in B1
-        '''
+        """P B1 S-> P For(new_v in range(1)){B1} S
+        Note: no continue or break is in B1
+        """
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -1312,22 +1422,28 @@ class Refactoring:
                     for ln in ln_list:
                         if ln != "":
                             token_list = get_token_list(ln)
-                            if any([token.string in ["break", "continue"] for token in token_list]):
+                            if any(
+                                [
+                                    token.string in ["break", "continue"]
+                                    for token in token_list
+                                ]
+                            ):
                                 can_refactor = False
                                 break
 
                     if not can_refactor:
                         continue
 
-                    for j in range(len(ln_list)-1):
-                        for k in range(j, len(ln_list)-1):
+                    for j in range(len(ln_list) - 1):
+                        for k in range(j, len(ln_list) - 1):
                             refactored_bb = ""
                             indent_str = "".join([" " for id in range(indent_list[i])])
 
-                            for l in range(len(ln_list)-1):
-
+                            for l in range(len(ln_list) - 1):
                                 if l == j:
-                                    refactored_bb += indent_str + "for added_loop in range(1):\n"
+                                    refactored_bb += (
+                                        indent_str + "for added_loop in range(1):\n"
+                                    )
                                     refactored_bb += "    " + ln_list[l] + "\n"
                                 else:
                                     refactored_bb += ln_list[l] + "\n"
@@ -1338,7 +1454,9 @@ class Refactoring:
                                     refactored_code += refactored_bb
                                 else:
                                     refactored_code += bb_list[l]
-                            refactored_code_list.append(not_mutated_code + refactored_code)
+                            refactored_code_list.append(
+                                not_mutated_code + refactored_code
+                            )
                 elif stru_list[i] in ["for", "while", "if"]:
                     indent_str = "".join([" " for id in range(indent_list[i])])
                     refactored_bb = ""
@@ -1361,7 +1479,12 @@ class Refactoring:
                                 for ln in ln_list:
                                     if ln != "":
                                         token_list = get_token_list(ln)
-                                        if any([token.string in ["break", "continue"] for token in token_list]):
+                                        if any(
+                                            [
+                                                token.string in ["break", "continue"]
+                                                for token in token_list
+                                            ]
+                                        ):
                                             can_refactor = False
                                             break
                                 if not can_refactor:
@@ -1377,7 +1500,7 @@ class Refactoring:
         return refactored_code_list
 
     def refactor_rule_twentyone(self, code):
-        '''P Else{B1} S -> P Elif(True){B1} S'''
+        """P Else{B1} S -> P Elif(True){B1} S"""
         refactored_code_list = []
 
         cfs_map = get_cfs_map(code)
@@ -1393,7 +1516,7 @@ class Refactoring:
                 if stru_list[i] == "else":
                     refactored_code = "".join(bb_list[:i])
                     refactored_code += bb_list[i].replace("else", "elif True")
-                    refactored_code += "".join(bb_list[i+1:])
+                    refactored_code += "".join(bb_list[i + 1 :])
                     refactored_code_list.append(not_mutated_code + refactored_code)
 
         return refactored_code_list

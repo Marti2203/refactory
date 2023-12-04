@@ -14,22 +14,22 @@ from basic_framework.statement import *
 
 
 def unwrapper(expr):
-    wrap_left_str = "var_dict[\'"
-    wrap_right_str = "\']"
+    wrap_left_str = "var_dict['"
+    wrap_right_str = "']"
     while True:
         l1 = expr.find(wrap_left_str)
         if l1 == -1:
             break
         else:
             left_part = expr[:l1]
-            cond_right = expr[l1 + len(wrap_left_str):]
+            cond_right = expr[l1 + len(wrap_left_str) :]
             l2 = cond_right.find(wrap_right_str)
             if l2 == -1:
                 print("unwrapper: something wrong")
                 break
             else:
                 mid_part = cond_right[:l2]
-                right_part = cond_right[l2 + len(wrap_right_str):]
+                right_part = cond_right[l2 + len(wrap_right_str) :]
                 expr = left_part + mid_part + right_part
     return expr
 
@@ -46,9 +46,7 @@ def safe_eval_list(expr_list, score_list, var_dict, mpq):
 
 
 class FastEvaluator:
-
     def parallel_eval(self, expr_list, score_list, var_dict, n_jobs=8):
-
         relation_dict = {}
         score_dict = {}
         result_dict = {}
@@ -61,10 +59,13 @@ class FastEvaluator:
         mpq_list = []
         try:
             for i in range(n_jobs):
-                part_expr_list = expr_list[seg_len * i: seg_len * (i + 1)]
-                part_score_list = score_list[seg_len * i: seg_len * (i + 1)]
+                part_expr_list = expr_list[seg_len * i : seg_len * (i + 1)]
+                part_score_list = score_list[seg_len * i : seg_len * (i + 1)]
                 mpq = Queue()
-                p = Process(target=safe_eval_list, args=(part_expr_list, part_score_list, var_dict, mpq))
+                p = Process(
+                    target=safe_eval_list,
+                    args=(part_expr_list, part_score_list, var_dict, mpq),
+                )
                 p_list.append(p)
                 mpq_list.append(mpq)
 
@@ -87,7 +88,6 @@ class FastEvaluator:
                             expr, score, expr_res = mpq.get()
                             result_dict[expr] = expr_res
                             if expr_res is not None:
-
                                 try:
                                     relation_dict[expr_res] = relation_dict[expr_res]
                                 except:
@@ -128,7 +128,7 @@ def rm_bb_indent(bb_code):
         new_line = rm_indent(line)
         new_bb_code += new_line + "\n"
 
-    assert(len(set(curr_ind_list)) <= 1)
+    assert len(set(curr_ind_list)) <= 1
 
     ind = 0
     if len(curr_ind_list) > 0:
@@ -150,7 +150,7 @@ def resume_bb_indent(bb_code, ind):
 
 
 def regularize(code):
-    '''change code style (tab to space)'''
+    """change code style (tab to space)"""
     # remove comment
     code = astunparse.unparse(ast.parse(code))
 
@@ -164,7 +164,11 @@ def regularize(code):
     new_line_flag = False
     for token in token_list:
         if tok_name[token.exact_type] in ["NEWLINE", "ENDMARKER"]:
-            new_code += indent_str + " ".join([tmp_token.string for tmp_token in tmp_list]) + "\n"
+            new_code += (
+                indent_str
+                + " ".join([tmp_token.string for tmp_token in tmp_list])
+                + "\n"
+            )
             tmp_list = []
             new_line_flag = True
         elif tok_name[token.exact_type] == "NL":
@@ -182,14 +186,15 @@ def regularize(code):
 
     final_code = ""
     for line in new_code.split("\n"):
-
         token_list = get_token_list(line)
         if any([token.string in ["from", "import"] for token in token_list]):
             pass
         else:
-            if get_indent(line) == 0 and \
-                len(token_list) > 1 and \
-                    all([token.string != "def" for token in token_list]):
+            if (
+                get_indent(line) == 0
+                and len(token_list) > 1
+                and all([token.string != "def" for token in token_list])
+            ):
                 pass
             else:
                 final_code += line + "\n"

@@ -20,14 +20,17 @@ def add_iil_holes(code):
         hole_result_code += line
 
         if is_method_sign(line):
-            hole_result_code += "    Holes.iil_hole(" + str(
-                i + sl_map[i]) + ")\n"
+            hole_result_code += "    Holes.iil_hole(" + str(i + sl_map[i]) + ")\n"
             sl_map[i] += 0.01
 
         if is_loop_stat(line):
             ind = get_indent(line_list[i])
-            hole_result_code += "".join([" " for k in range(ind)]) + "    Holes.iil_hole(" + str(
-                i + sl_map[i]) + ")\n"
+            hole_result_code += (
+                "".join([" " for k in range(ind)])
+                + "    Holes.iil_hole("
+                + str(i + sl_map[i])
+                + ")\n"
+            )
             sl_map[i] += 0.01
     return hole_result_code
 
@@ -52,19 +55,27 @@ def add_vari_hist_holes(code, func_name):
             hole_result_code += line + "\n"
         elif is_if_stat(line):
             ind = get_indent(line)
-            hole_result_code += "".join([" " for j in range(ind)]) + "Holes.vari_hist_hole(locals())\n"
+            hole_result_code += (
+                "".join([" " for j in range(ind)]) + "Holes.vari_hist_hole(locals())\n"
+            )
             hole_result_code += line + "\n"
-        elif is_elif_stat(line) or \
-                is_else_stat(line):
+        elif is_elif_stat(line) or is_else_stat(line):
             ind = get_indent(line)
             hole_result_code += line + "\n"
-            hole_result_code += "".join([" " for j in range(ind+4)]) + "Holes.vari_hist_hole(locals())\n"
-        elif is_for_loop_stat(line) or \
-                is_while_loop_stat(line):
+            hole_result_code += (
+                "".join([" " for j in range(ind + 4)])
+                + "Holes.vari_hist_hole(locals())\n"
+            )
+        elif is_for_loop_stat(line) or is_while_loop_stat(line):
             ind = get_indent(line)
-            hole_result_code += "".join([" " for j in range(ind)]) + "Holes.vari_hist_hole(locals())\n"
+            hole_result_code += (
+                "".join([" " for j in range(ind)]) + "Holes.vari_hist_hole(locals())\n"
+            )
             hole_result_code += line + "\n"
-            hole_result_code += "".join([" " for j in range(ind + 4)]) + "Holes.vari_hist_hole(locals())\n"
+            hole_result_code += (
+                "".join([" " for j in range(ind + 4)])
+                + "Holes.vari_hist_hole(locals())\n"
+            )
         else:
             ind = get_indent(line)
             if ind > 0:
@@ -85,7 +96,7 @@ def get_hole_dsp_dict(code, ln_list=None):
     for i in range(len(line_list)):
         line = line_list[i]
         if is_method_sign(line):
-            sig = line[line.find("def")+3:line.find("(")].strip()
+            sig = line[line.find("def") + 3 : line.find("(")].strip()
             continue
 
         if sig != "" and sig in line:
@@ -96,7 +107,7 @@ def get_hole_dsp_dict(code, ln_list=None):
 
         hole_dsp_dict[i] = []
 
-        if is_cond_stat(line): # and mut_cf:
+        if is_cond_stat(line):  # and mut_cf:
             hole_dsp_dict[i].append("cond")
         if is_assign_stat(line) and not has_method_call(line):
             hole_dsp_dict[i].append("assign")
@@ -119,8 +130,8 @@ def get_hole_dsp_dict(code, ln_list=None):
     return hole_dsp_dict
 
 
-def add_holes(code, task, ln_list):#vari_set=None
-    assert(ln_list is not None and len(ln_list) > 0)
+def add_holes(code, task, ln_list):  # vari_set=None
+    assert ln_list is not None and len(ln_list) > 0
     ln_list = sorted(ln_list)
 
     sl_map = {}
@@ -134,7 +145,7 @@ def add_holes(code, task, ln_list):#vari_set=None
 
         if is_method_sign(line):
             hole_result_code += line
-            hole_result_code += "    Holes.iil_hole(" + str(i + sl_map[i]) + ")\n" #
+            hole_result_code += "    Holes.iil_hole(" + str(i + sl_map[i]) + ")\n"  #
             sl_map[i] += 0.01
             continue
 
@@ -155,34 +166,52 @@ def add_holes(code, task, ln_list):#vari_set=None
                         r = token.start[1]
             condition_code = line[l:r]
 
-            condition_code = rm_indent(condition_code.replace("\"", "\\\""))
-            hole_result_code += line[:l] + \
-                            "Holes.condition_hole(" + str(i) + \
-                            ", r\"" + condition_code + "\", " + \
-                            "locals()" + "):\n"
+            condition_code = rm_indent(condition_code.replace('"', '\\"'))
+            hole_result_code += (
+                line[:l]
+                + "Holes.condition_hole("
+                + str(i)
+                + ', r"'
+                + condition_code
+                + '", '
+                + "locals()"
+                + "):\n"
+            )
             old_cond = condition_code
-        elif is_assign_stat(line) and "assign_" + str(i) in task:# and not self.__has_method_call(line):
+        elif (
+            is_assign_stat(line) and "assign_" + str(i) in task
+        ):  # and not self.__has_method_call(line):
             l = 0
 
             token_list = get_token_list(line)
             for k in range(len(token_list)):
                 token = token_list[k]
-                if tok_name[token.exact_type] in ["EQUAL", "PLUSEQUAL", "MINEQUAL", "STAREQUAL", "SLASHEQUAL"] and \
-                        token.string in ["=", "+=","-=", "*=", "/="]:
+                if tok_name[token.exact_type] in [
+                    "EQUAL",
+                    "PLUSEQUAL",
+                    "MINEQUAL",
+                    "STAREQUAL",
+                    "SLASHEQUAL",
+                ] and token.string in ["=", "+=", "-=", "*=", "/="]:
                     l = token.end[1]
                     break
-                elif tok_name[token.exact_type] == "NAME" and \
-                        token.string == "return":
+                elif tok_name[token.exact_type] == "NAME" and token.string == "return":
                     l = token.end[1]
                     break
 
             assign_code = line[l:-1]
 
-            assign_code = rm_indent(assign_code.replace("\"", "\\\""))
-            hole_result_code += line[:l] + \
-                           " Holes.assign_hole(" + str(i) + \
-                           ", r\"" + assign_code + "\", " + \
-                           "locals()" + ")\n"
+            assign_code = rm_indent(assign_code.replace('"', '\\"'))
+            hole_result_code += (
+                line[:l]
+                + " Holes.assign_hole("
+                + str(i)
+                + ', r"'
+                + assign_code
+                + '", '
+                + "locals()"
+                + ")\n"
+            )
             old_cond = assign_code
         elif "rm_" + str(i) in task:
             hole_result_code += ""
@@ -199,60 +228,108 @@ def add_holes(code, task, ln_list):#vari_set=None
         elif "ifbrk_" + str(i) in task:
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
-            hole_result_code += ind_space + \
-                                "if Holes.condition_hole(" + str(i) + \
-                                ", r\"" + old_cond + "\", " + \
-                                "locals()" + "):\n"
+            hole_result_code += (
+                ind_space
+                + "if Holes.condition_hole("
+                + str(i)
+                + ', r"'
+                + old_cond
+                + '", '
+                + "locals()"
+                + "):\n"
+            )
             hole_result_code += ind_space + "    " + "break" + "\n"
             hole_result_code += line
         elif "ifctn_" + str(i) in task:
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
-            hole_result_code += ind_space + \
-                                "if Holes.condition_hole(" + str(i) + \
-                                ", r\"" + old_cond + "\", " + \
-                                "locals()" + "):\n"
+            hole_result_code += (
+                ind_space
+                + "if Holes.condition_hole("
+                + str(i)
+                + ', r"'
+                + old_cond
+                + '", '
+                + "locals()"
+                + "):\n"
+            )
             hole_result_code += ind_space + "    " + "continue" + "\n"
             hole_result_code += line
         elif "ifret_" + str(i) in task:
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
-            hole_result_code += ind_space + "if " + "Holes.condition_hole(" + str(i + sl_map[i]) + \
-                                ", r\"" + old_cond + "\", " + \
-                                "locals()" + "):\n"
+            hole_result_code += (
+                ind_space
+                + "if "
+                + "Holes.condition_hole("
+                + str(i + sl_map[i])
+                + ', r"'
+                + old_cond
+                + '", '
+                + "locals()"
+                + "):\n"
+            )
             sl_map[i] += 0.01
-            hole_result_code += ind_space + "    return " + "Holes.assign_hole(" + str(i + sl_map[i]) + \
-                                ", r\"" + old_assign + "\", " + \
-                                "locals()" + ")\n"
+            hole_result_code += (
+                ind_space
+                + "    return "
+                + "Holes.assign_hole("
+                + str(i + sl_map[i])
+                + ', r"'
+                + old_assign
+                + '", '
+                + "locals()"
+                + ")\n"
+            )
             sl_map[i] += 0.01
             hole_result_code += line
         elif "ret_" + str(i) in task:
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
 
-
-            hole_result_code += ind_space + "return " + "Holes.assign_hole(" + str(i + sl_map[i]) + \
-                                ", r\"" + old_assign + "\", " + \
-                                "locals()" + ")\n"
+            hole_result_code += (
+                ind_space
+                + "return "
+                + "Holes.assign_hole("
+                + str(i + sl_map[i])
+                + ', r"'
+                + old_assign
+                + '", '
+                + "locals()"
+                + ")\n"
+            )
             hole_result_code += line
             sl_map[i] += 0.01
 
-        elif "ifcond_" + str(i) in task and not is_cond_stat(line) and not is_loop_stat(line):
+        elif (
+            "ifcond_" + str(i) in task
+            and not is_cond_stat(line)
+            and not is_loop_stat(line)
+        ):
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
-            hole_result_code += ind_space + "if " + "Holes.condition_hole(" + str(i + sl_map[i]) + \
-                                ", r\"" + old_cond + "\", " + \
-                                "locals()" + "):\n"
+            hole_result_code += (
+                ind_space
+                + "if "
+                + "Holes.condition_hole("
+                + str(i + sl_map[i])
+                + ', r"'
+                + old_cond
+                + '", '
+                + "locals()"
+                + "):\n"
+            )
             sl_map[i] += 0.01
             hole_result_code += "    " + line
         elif "ini_" + str(i) in task:
             ind = get_indent(line)
             ind_space = "".join([" " for k in range(ind)])
-            hole_result_code += ind_space + "Holes.init_hole(" + str(i + sl_map[i]) + ",locals())\n"
+            hole_result_code += (
+                ind_space + "Holes.init_hole(" + str(i + sl_map[i]) + ",locals())\n"
+            )
             sl_map[i] += 0.01
             hole_result_code += line
         elif "method_" + str(i) in task and has_method_call(line):
-
             tmp_line = copy.deepcopy(line)
             res_line = ""
             while True:
@@ -261,18 +338,30 @@ def add_holes(code, task, ln_list):#vari_set=None
                 match_list = [p[0] for p in p_list]
                 if len(match_list) > 0:
                     longest_match = max(match_list, key=len)
-                    #m = p.search(tmp_line)
+                    # m = p.search(tmp_line)
                     l = line.index(longest_match)
                     r = l + len(longest_match)
-                    #l, r = m.span()
-                    res_line += tmp_line[:l] + "Holes.method_hole(" + str(i + sl_map[i]) + ",r\"" + tmp_line[l:r] + "\",locals())"
+                    # l, r = m.span()
+                    res_line += (
+                        tmp_line[:l]
+                        + "Holes.method_hole("
+                        + str(i + sl_map[i])
+                        + ',r"'
+                        + tmp_line[l:r]
+                        + '",locals())'
+                    )
                     sl_map[i] += 0.01
                     tmp_line = tmp_line[r:]
                 else:
                     res_line += tmp_line
                     hole_result_code += res_line
                     break
-        elif any(["indent" == atom.split("_")[0] and atom.split("_")[2] == str(i) for atom in task]):
+        elif any(
+            [
+                "indent" == atom.split("_")[0] and atom.split("_")[2] == str(i)
+                for atom in task
+            ]
+        ):
             for atom in task:
                 cell_list = atom.split("_")
                 if cell_list[0] == "indent" and cell_list[2] == str(i):
@@ -285,7 +374,12 @@ def add_holes(code, task, ln_list):#vari_set=None
         # Add loop_hole
         if is_loop_stat(line):
             ind = get_indent(ind_clean_line_list[i])
-            hole_result_code += "".join([" " for k in range(ind)]) + "    Holes.iil_hole(" + str(i + sl_map[i]) + ")\n" #
+            hole_result_code += (
+                "".join([" " for k in range(ind)])
+                + "    Holes.iil_hole("
+                + str(i + sl_map[i])
+                + ")\n"
+            )  #
             sl_map[i] += 0.01
     return hole_result_code
 
@@ -320,13 +414,12 @@ def gen_hole_task_list(hole_dsp_dict, k_best=5000):
         if len(task_list) > 10 * k_best:
             break
 
-
     task_list = sorted(task_list, key=functools.cmp_to_key(cmp_task))
 
     return [[]] + task_list[:k_best]
 
-def cmp_task(task_a, task_b):
 
+def cmp_task(task_a, task_b):
     if len(task_a) < len(task_b):
         return -1
     elif len(task_a) > len(task_b):
@@ -343,19 +436,21 @@ def cmp_task(task_a, task_b):
 
 
 def get_task_score(task):
-    score_dict = {"ifbrk": 22,
-                  "ifctn": 22,
-                  "ifret": 22,
-                  "ret": 20,
-                  "ini": 20,
-                  "assign": 20,
-                  "cond": 2,
-                  "ifcond": 2,
-                  "indent": 2,
-                  "rm": 4,
-                  "ctn": 1,
-                  "brk": 1,
-                  "method": 1}
+    score_dict = {
+        "ifbrk": 22,
+        "ifctn": 22,
+        "ifret": 22,
+        "ret": 20,
+        "ini": 20,
+        "assign": 20,
+        "cond": 2,
+        "ifcond": 2,
+        "indent": 2,
+        "rm": 4,
+        "ctn": 1,
+        "brk": 1,
+        "method": 1,
+    }
 
     dd = get_dist_dict(task)
     score = 0

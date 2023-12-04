@@ -15,8 +15,10 @@ class Tester:
 
         self.__input_dict = self.__ext_case_path(self.__ans_dir_path, "input")
         self.__output_dict = self.__ext_case_path(self.__ans_dir_path, "output")
-        if len(list(self.__input_dict.keys())) == 0 or \
-                len(list(self.__output_dict.keys())) == 0:
+        if (
+            len(list(self.__input_dict.keys())) == 0
+            or len(list(self.__output_dict.keys())) == 0
+        ):
             raise Tester.NoTestCaseException()
 
         self.__front_code = ""
@@ -45,8 +47,8 @@ class Tester:
             elif os.path.isfile(curr_path):
                 mytype = file_name.split("_")[0]
 
-                tc_id = file_name[len(mytype)+1:].split(".")[0]
-                
+                tc_id = file_name[len(mytype) + 1 :].split(".")[0]
+
                 if mytype == type_name:
                     res[tc_id] = curr_path
         return res
@@ -66,11 +68,11 @@ class Tester:
             real_output, exp_output = self.run_tc(code, tc_id, timeout)
 
             # Debug
-            #if real_output != exp_output:
+            # if real_output != exp_output:
             #    print(real_output)
             #    print(exp_output)
 
-            tr_dict[tc_id] = (real_output == exp_output)
+            tr_dict[tc_id] = real_output == exp_output
 
             if "{" in real_output and "{" in exp_output:
                 a, b = None, None
@@ -84,8 +86,8 @@ class Tester:
                     b = eval(exp_output.strip())
                 except:
                     pass
-                #print(a)
-                #print(b)
+                # print(a)
+                # print(b)
                 tr_dict[tc_id] = tr_dict[tc_id] or (a == b)
 
         return tr_dict
@@ -106,7 +108,9 @@ class Tester:
         with open(output_path, "r") as f:
             exp_output += str(eval(f.read().strip())) + "\n"
 
-        real_output = run_program_to(code, self.__front_code, self.__end_code, entry_code, timeout)
+        real_output = run_program_to(
+            code, self.__front_code, self.__end_code, entry_code, timeout
+        )
         return real_output, exp_output
 
     def is_pass(self, tr):
